@@ -78,7 +78,7 @@ module.exports = function (grunt) {
 				files: [{
 					flatten: true,
 					expand: true,
-					src: ['src/mock/ng-oauth2.mock.js'],
+					src: ['src/mock/ng-auth.mock.js'],
 					dest: 'dist/'
 				}]
 			}
