@@ -1,3 +1,5 @@
+'use strict';
+
 // Define auth configuration
 var settings = {
 	redirecting: false, // Help with not trying to renew token when redirect is about to happen
@@ -5,7 +7,9 @@ var settings = {
 	popup: false,
 	scope: [],
 	options: {},
-	auto_auth: true
+	auto_auth: true,
+	response_type: 'token',
+	path_delimiter: '#'
 },
 
 tokenRefreshReduction = (60 * 1000 * 5), // 5 minutes
@@ -14,7 +18,6 @@ AUTH_SESSION_STORAGE_KEY = 'ng-auth';
 
 // Save a token when it is found
 function saveToken(token, $window) {
-	'use strict';
 
 	// Save to session storage
 	var now = Date.now();
@@ -23,9 +26,26 @@ function saveToken(token, $window) {
 	return token;
 }
 
+// save a code
+function saveCode(code, $window) {
+	$window.localStorage[AUTH_SESSION_STORAGE_KEY + '-' + settings.client_id] = angular.toJson(code);
+	return code;
+}
+
+function buildTokenUrl(config, code, $location) {
+	var copy = angular.copy(config);
+	var url = copy.token_url;
+
+	url += '?client_id=' + copy.client_id;
+	url += '&code=' + code.code;
+	url += '&grant_type=authorization_code';
+	url += '&redirect_uri=' + (copy.redirect_uri === true ? $location.absUrl().split('#')[0].split('?')[0] : copy.redirect_uri);
+
+	return url;
+}
+
 // Using the config, build the auth redirect url
 function buildUrl(config, $location) {
-	'use strict';
 
 	var configCopy = angular.copy(config);
 	var url = configCopy.oauth2_url + '?';
@@ -68,11 +88,10 @@ function buildUrl(config, $location) {
 // Remove auth info from url
 // TODO Does this work in html5 mode?
 var tokenRegex = /([^&=]+)=([^&]*)/g;
-function stripToken(path) {
-	'use strict';
+function stripToken(path, delimiter) {
 
 	var params = {}, queryString = '', m;
-	var pathChunks = path.split('#');
+	var pathChunks = path.split(delimiter || '#');
 
 	if (pathChunks.length > 1) {
 
@@ -95,7 +114,6 @@ function stripToken(path) {
 
 // Check url against protected urls
 function urlRequiresAuth(url, settings) {
-	'use strict';
 
 	var protect = false;
 	angular.forEach(settings.content_urls, function (prefix) {
@@ -108,7 +126,6 @@ function urlRequiresAuth(url, settings) {
 
 // Configure function
 function configure (config) {
-	'use strict';
 
 	// We need to blow up somewhere else if these are bad values
 	// This allows multiple calls to configure
@@ -119,6 +136,12 @@ function configure (config) {
 	// Set redirect uri to the current location
 	// WARNING: Allows flexibility in development, but still must be registered as valid redirect uri on auth server
 	settings.redirect_uri = config.redirectUri || settings.redirect_uri;
+
+	// Response type (defaults to token)
+	settings.response_type = config.responseType || settings.response_type;
+
+	// Path delimiter (some oauth providers put token or code after a #, or ? tells ng-auth where to look)
+	settings.path_delimiter = config.pathDelimiter || settings.path_delimiter;
 
 	// URLs to check for authentication on
 	if (angular.isArray(config.contentUrls)) {
@@ -139,7 +162,9 @@ function configure (config) {
 
 	// ClientID and OAuth2 url
 	settings.oauth2_url = config.oauth2Url || settings.oauth2_url;
+	settings.token_url = config.tokenUrl;
 	settings.client_id = config.clientId || settings.client_id;
+	settings.client_secret = config.clientSecret;
 
 	// Query param options
 	settings.options = angular.extend({}, settings.options, (config.options || {}));
@@ -150,7 +175,6 @@ function configure (config) {
 
 // Run-time service
 function oauth2Service($injector, $q, $location, $window) {
-	'use strict';
 
 	var foundOnPath = false;
 	function findToken() {
@@ -166,7 +190,7 @@ function oauth2Service($injector, $q, $location, $window) {
 		}
 
 		// Try to find access token on path
-		var token = stripToken($window.location.href);
+		var token = stripToken($window.location.href, settings.path_delimiter);
 		if (token.access_token && token.expires_in) {
 			foundOnPath = true;
 			saveToken(token, $window);
@@ -190,6 +214,20 @@ function oauth2Service($injector, $q, $location, $window) {
 			} else if (~$location.hash().indexOf('/access_token')) {
 				$location.hash(''); // Clear hash if we aren't using routing or state
 			}
+
+			return;
+		} else if (token.code) {
+			// handle code flow
+			// 1. save code in local storage
+			saveCode(token, $window);
+			// 2. Get an access token
+			service.getTokenFromCode(token)
+			.then(function (accessToken) {
+				foundOnPath = true;
+				saveToken(accessToken, $window);
+				showBody();
+				$location.search('');
+			});
 
 			return;
 		}
@@ -251,6 +289,29 @@ function oauth2Service($injector, $q, $location, $window) {
 		return angular.isDefined(angular.fromJson($window.sessionStorage[AUTH_SESSION_STORAGE_KEY + '-' + settings.client_id]));
 	};
 
+	service.getTokenFromCode = function (code) {
+
+		var defer = $q.defer();
+
+		fetch(buildTokenUrl(settings, code, $location), {
+			method: 'get',
+			headers: {
+				Accept: 'application/json'
+			}
+		}).then(function (json) {
+			if (angular.isObject(json)) {
+				defer.resolve(saveToken(json, $window));
+				return;
+			}
+
+			defer.reject('Token was not received as JSON');
+		}).catch(function () {
+			defer.reject('Something bad happened');
+		});
+
+		return defer.promise;
+	};
+
 	service.updateToken = function () {
 
 		var defer = $q.defer();
@@ -297,7 +358,6 @@ function oauth2Service($injector, $q, $location, $window) {
 }
 
 function oauth2($provide, $httpProvider) {
-	'use strict';
 
 	// Set up interceptor
 	$httpProvider.defaults.useXDomain = true;

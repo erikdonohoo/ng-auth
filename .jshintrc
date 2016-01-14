@@ -13,6 +13,7 @@
   "strict": true,
   "boss": true,
   "globals": {
-    "angular": false
+    "angular": false,
+    "fetch": false
   }
 }

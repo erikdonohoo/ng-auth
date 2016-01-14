@@ -1,7 +1,7 @@
 // Karma configuration
 // http://karma-runner.github.io/0.10/config/configuration-file.html
 
-module.exports = function(config) {
+module.exports = function (config) {
 	'use strict';
 	config.set({
 		// base path, that will be used to resolve files and exclude
@@ -13,12 +13,14 @@ module.exports = function(config) {
 		// list of files / patterns to load in the browser
 		// You must import all required files here as they won't be inserted automatically
 		files: [
-		'bower_components/angular/angular.js',
-		'bower_components/angular-mocks/angular-mocks.js',
-		'src/js/main.js',
-		'src/js/oauth2/*.js',
-		'test/mock/**/*.js',
-		'test/spec/**/*.js'
+			'bower_components/angular/angular.js',
+			'bower_components/angular-mocks/angular-mocks.js',
+			'bower_components/es6-promise/promise.js',
+			'bower_components/fetch/fetch.js',
+			'src/js/main.js',
+			'src/js/oauth2/*.js',
+			'test/mock/**/*.js',
+			'test/spec/**/*.js'
 		],
 
 		// list of files / patterns to exclude
