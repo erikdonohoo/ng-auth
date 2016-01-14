@@ -18,9 +18,13 @@ AUTH_SESSION_STORAGE_KEY = 'ng-auth';
 
 // Save a token when it is found
 function saveToken(token, $window) {
-
 	// Save to session storage
 	var now = Date.now();
+
+	if (token.refresh_token) {
+		saveCode({code: token.refresh_token}, $window);
+	}
+
 	token.expires_at = token.expires_at || (now + (token.expires_in * 1000) - tokenRefreshReduction);
 	$window.sessionStorage[AUTH_SESSION_STORAGE_KEY + '-' + settings.client_id] = angular.toJson(token);
 	return token;
