@@ -298,6 +298,8 @@ function oauth2Service($injector, $q, $location, $window) {
 			headers: {
 				Accept: 'application/json'
 			}
+		}).then(function (response) {
+			return response.json();
 		}).then(function (json) {
 			if (angular.isObject(json)) {
 				defer.resolve(saveToken(json, $window));
