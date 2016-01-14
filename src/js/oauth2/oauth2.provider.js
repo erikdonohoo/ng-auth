@@ -364,7 +364,6 @@ function oauth2Service($injector, $q, $location, $window) {
 }
 
 function oauth2($provide, $httpProvider) {
-
 	// Set up interceptor
 	$httpProvider.defaults.useXDomain = true;
 	delete $httpProvider.defaults.headers.common['X-Requested-With'];
@@ -383,7 +382,8 @@ function oauth2($provide, $httpProvider) {
 					// Get new token async
 					} else if (!$oauth2.isAuthenticated() &&
 					($oauth2.wasAuthenticated() || settings.auto_auth) && !settings.redirecting) {
-						return $oauth2.updateToken().then(function gotToken(token) {
+						return (settings.response_type && settings.response_type === 'code' ?
+							$oauth2.getTokenFromCode($oauth2.getToken().refresh_token) : $oauth2.updateToken()).then(function gotToken(token) {
 							config.headers.Authorization = 'Bearer ' + token.access_token;
 							saveToken(token, $window);
 							return $q.when(config);
