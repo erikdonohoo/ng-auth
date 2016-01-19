@@ -74,7 +74,7 @@ function buildUrl(config, $location) {
 			url;
 
 	// Add response type (force token for now)
-	url += '&response_type=token';
+	url += '&response_type=' + configCopy.response_type;
 
 	// Add redirectUri
 	url = configCopy.redirect_uri === true ?
