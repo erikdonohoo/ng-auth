@@ -16,6 +16,12 @@ tokenRefreshReduction = (60 * 1000 * 5), // 5 minutes
 
 AUTH_SESSION_STORAGE_KEY = 'ng-auth';
 
+// save a code
+function saveCode(code, $window) {
+	$window.localStorage[AUTH_SESSION_STORAGE_KEY + '-' + settings.client_id] = angular.toJson(code);
+	return code;
+}
+
 // Save a token when it is found
 function saveToken(token, $window) {
 	// Save to session storage
@@ -28,12 +34,6 @@ function saveToken(token, $window) {
 	token.expires_at = token.expires_at || (now + (token.expires_in * 1000) - tokenRefreshReduction);
 	$window.sessionStorage[AUTH_SESSION_STORAGE_KEY + '-' + settings.client_id] = angular.toJson(token);
 	return token;
-}
-
-// save a code
-function saveCode(code, $window) {
-	$window.localStorage[AUTH_SESSION_STORAGE_KEY + '-' + settings.client_id] = angular.toJson(code);
-	return code;
 }
 
 function buildTokenUrl(config, code, $location) {
@@ -368,7 +368,32 @@ function oauth2($provide, $httpProvider) {
 	$httpProvider.defaults.useXDomain = true;
 	delete $httpProvider.defaults.headers.common['X-Requested-With'];
 
-	$provide.factory('authInterceptor', ['$oauth2', '$q', '$window', function ($oauth2, $q, $window) {
+	$provide.factory('authInterceptor', ['$oauth2', '$q', '$window', '$timeout', function ($oauth2, $q, $window, $timeout) {
+
+		var waitTimeIncrease = 2;
+		var maxWait = 2000;
+		function wait (request, defer, waitTime) {
+
+			// cancel if we are waiting too long
+			if (waitTime > maxWait) {
+				defer.reject(request);
+			}
+
+			$timeout(function () {
+				if ($oauth2.isAuthenticated()) {
+					defer.resolve(request);
+				} else {
+					wait(request, defer, waitTime * waitTimeIncrease);
+				}
+			}, waitTime);
+		}
+
+		function waitForAuth (request) {
+			var defer = $q.defer();
+			wait(request, defer, 10);
+			return defer.promise;
+		}
+
 		return {
 			request: function (config) {
 				// Ignore requests not going to api urls
@@ -381,7 +406,7 @@ function oauth2($provide, $httpProvider) {
 
 					// Get new token async
 					} else if (!$oauth2.isAuthenticated() &&
-					($oauth2.wasAuthenticated() || settings.auto_auth) && !settings.redirecting) {
+					$oauth2.wasAuthenticated() && !settings.redirecting) {
 						return (settings.response_type && settings.response_type === 'code' ?
 							$oauth2.getTokenFromCode($oauth2.getToken().refresh_token) : $oauth2.updateToken()).then(function gotToken(token) {
 							config.headers.Authorization = 'Bearer ' + token.access_token;
@@ -391,9 +416,9 @@ function oauth2($provide, $httpProvider) {
 							return $q.reject('Invalid token cant be used for request');
 						});
 
-					// We don't have a token yet, cancel request
+					// return a promise that resolves with config when $oauth2.isAuthenticated is true again
 					} else {
-						return $q.reject(config);
+						return waitForAuth(config);
 					}
 				}
 
