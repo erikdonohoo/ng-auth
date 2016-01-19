@@ -136,8 +136,10 @@ module.exports = function (grunt) {
 				reporters: ['coverage'],
 				coverageReporter: {
 					reporters: [{
-						type: 'html',
-						subdir: 'html'
+						type: 'lcov',
+						subdir: 'lcov'
+					}, {
+						type: 'text-summary'
 					}]
 				}
 			}
@@ -152,7 +154,7 @@ module.exports = function (grunt) {
 	// Register tasks
 	grunt.registerTask('build', ['clean', 'jshint:all', 'jscs', 'replace:strict', 'concat', 'uglify', 'copy:css', 'copy:mock']);
 	grunt.registerTask('test', ['jshint:all', 'jscs', 'jshint:test', 'connect:test', 'karma:test']);
-	grunt.registerTask('test-ci', ['jshint:all', 'jscs', 'jshint:test', 'connect:test', 'karma:test']);
+	grunt.registerTask('test-ci', ['jshint:all', 'jscs', 'jshint:test', 'connect:test', 'karma:test', 'karma:coverage']);
 	grunt.registerTask('coverage', ['connect:test', 'karma:coverage', 'connect:coverage']);
 	grunt.registerTask('default', ['test', 'build']);
 	grunt.registerTask('debug', ['connect:test', 'karma:debug']);
