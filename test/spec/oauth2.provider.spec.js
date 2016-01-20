@@ -274,7 +274,7 @@ describe('$oauth', function () {
 				expires_in: '3600',
 				expires_at: Date.now() + 3600 * 1000
 			};
-			$window.sessionStorage[AUTH_SESSION_STORAGE_KEY + '-' + settings.client_id] = angular.toJson(token);
+			$window.sessionStorage[AUTH_SESSION_STORAGE_KEY + '-' + settings.client_id + '-token'] = angular.toJson(token);
 			$injector.invoke($oauth2Provider.$get);
 			expect(settings.redirecting).toBe(false);
 			expect($window.location.href).toBe('http://my.cool.site.com/stuff/#/place/1/things');
@@ -290,7 +290,7 @@ describe('$oauth', function () {
 				expires_in: '3600',
 				expires_at: Date.now()
 			};
-			$window.sessionStorage[AUTH_SESSION_STORAGE_KEY + '-' + settings.client_id] = angular.toJson(token);
+			$window.sessionStorage[AUTH_SESSION_STORAGE_KEY + '-' + settings.client_id + '-token'] = angular.toJson(token);
 			var $oauth2 = $injector.invoke($oauth2Provider.$get);
 			expect(settings.redirecting).toBe(true);
 			expect($oauth2.wasAuthenticated()).toBe(true);
@@ -307,7 +307,7 @@ describe('$oauth', function () {
 				expires_in: '3600',
 				expires_at: Date.now() + 3600 * 1000
 			};
-			$window.sessionStorage[AUTH_SESSION_STORAGE_KEY + '-' + settings.client_id] = angular.toJson(token);
+			$window.sessionStorage[AUTH_SESSION_STORAGE_KEY + '-' + settings.client_id + '-token'] = angular.toJson(token);
 			$injector.invoke($oauth2Provider.$get);
 
 			$http.expectGET('http://secret.com/api/stuff', {
@@ -333,7 +333,7 @@ describe('$oauth', function () {
 				expires_in: '3600',
 				expires_at: Date.now() + 3600 * 1000
 			};
-			$window.sessionStorage[AUTH_SESSION_STORAGE_KEY + '-' + settings.client_id] = angular.toJson(token);
+			$window.sessionStorage[AUTH_SESSION_STORAGE_KEY + '-' + settings.client_id + '-token'] = angular.toJson(token);
 			$injector.invoke($oauth2Provider.$get);
 
 			$http.expectGET('http://cool.com/api/stuff', {
@@ -386,14 +386,14 @@ describe('$oauth', function () {
 				expires_in: '3600',
 				expires_at: Date.now() + 3600 * 100
 			};
-			$window.sessionStorage[AUTH_SESSION_STORAGE_KEY + '-' + settings.client_id] = angular.toJson(token);
+			$window.sessionStorage[AUTH_SESSION_STORAGE_KEY + '-' + settings.client_id + '-token'] = angular.toJson(token);
 			$injector.invoke($oauth2Provider.$get);
 			var $oauth2 = $injector.get('$oauth2');
 			var $q = $injector.get('$q');
 
 			// Make token expired
 			token.expires_at = Date.now();
-			$window.sessionStorage[AUTH_SESSION_STORAGE_KEY + '-' + settings.client_id] = angular.toJson(token);
+			$window.sessionStorage[AUTH_SESSION_STORAGE_KEY + '-' + settings.client_id + '-token'] = angular.toJson(token);
 
 			// Watch update token
 			spyOn($oauth2, 'updateToken').and.callFake(function () {
@@ -424,14 +424,14 @@ describe('$oauth', function () {
 				expires_in: '3600',
 				expires_at: Date.now() + 3600 * 100
 			};
-			$window.sessionStorage[AUTH_SESSION_STORAGE_KEY + '-' + settings.client_id] = angular.toJson(token);
+			$window.sessionStorage[AUTH_SESSION_STORAGE_KEY + '-' + settings.client_id + '-token'] = angular.toJson(token);
 			$injector.invoke($oauth2Provider.$get);
 			var $oauth2 = $injector.get('$oauth2');
 			var $q = $injector.get('$q');
 
 			// Make token expired
 			token.expires_at = Date.now();
-			$window.sessionStorage[AUTH_SESSION_STORAGE_KEY + '-' + settings.client_id] = angular.toJson(token);
+			$window.sessionStorage[AUTH_SESSION_STORAGE_KEY + '-' + settings.client_id + '-token'] = angular.toJson(token);
 
 			// Watch update token
 			spyOn($oauth2, 'updateToken').and.callFake(function () {
@@ -453,7 +453,7 @@ describe('$oauth', function () {
 				expires_in: '3600',
 				expires_at: Date.now() + 3600 * 100
 			};
-			$window.sessionStorage[AUTH_SESSION_STORAGE_KEY + '-' + settings.client_id] = angular.toJson(token);
+			$window.sessionStorage[AUTH_SESSION_STORAGE_KEY + '-' + settings.client_id + '-token'] = angular.toJson(token);
 			$injector.invoke($oauth2Provider.$get);
 			var $oauth2 = $injector.get('$oauth2');
 
@@ -471,7 +471,7 @@ describe('$oauth', function () {
 				expires_in: '3600',
 				expires_at: Date.now() + 3600 * 100
 			};
-			$window.sessionStorage[AUTH_SESSION_STORAGE_KEY + '-' + settings.client_id] = angular.toJson(token);
+			$window.sessionStorage[AUTH_SESSION_STORAGE_KEY + '-' + settings.client_id + '-token'] = angular.toJson(token);
 			$injector.invoke($oauth2Provider.$get);
 			var $oauth2 = $injector.get('$oauth2');
 
@@ -496,7 +496,7 @@ describe('$oauth', function () {
 				expires_in: '3600',
 				expires_at: Date.now() + 3600 * 100
 			};
-			$window.sessionStorage[AUTH_SESSION_STORAGE_KEY + '-' + settings.client_id] = angular.toJson(token);
+			$window.sessionStorage[AUTH_SESSION_STORAGE_KEY + '-' + settings.client_id + '-token'] = angular.toJson(token);
 			$injector.invoke($oauth2Provider.$get);
 			var $oauth2 = $injector.get('$oauth2');
 
@@ -520,7 +520,7 @@ describe('$oauth', function () {
 				expires_in: '3600',
 				expires_at: Date.now() + 3600 * 100
 			};
-			$window.sessionStorage[AUTH_SESSION_STORAGE_KEY + '-' + settings.client_id] = angular.toJson(token);
+			$window.sessionStorage[AUTH_SESSION_STORAGE_KEY + '-' + settings.client_id + '-token'] = angular.toJson(token);
 			$injector.invoke($oauth2Provider.$get);
 			var $oauth2 = $injector.get('$oauth2');
 
@@ -562,7 +562,7 @@ describe('$oauth', function () {
 				expires_in: '3600',
 				expires_at: Date.now() + 3600 * 100
 			};
-			$window.sessionStorage[AUTH_SESSION_STORAGE_KEY + '-' + settings.client_id] = angular.toJson(token);
+			$window.sessionStorage[AUTH_SESSION_STORAGE_KEY + '-' + settings.client_id + '-token'] = angular.toJson(token);
 			$injector.invoke($oauth2Provider.$get);
 			var $oauth2 = $injector.get('$oauth2');
 			var obj = {

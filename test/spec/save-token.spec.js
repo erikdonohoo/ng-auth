@@ -36,21 +36,21 @@ describe('$oauth2: saveToken', function () {
 	});
 
 	it('should add an entry to sessionStorage', function () {
-		expect($window.sessionStorage[AUTH_SESSION_STORAGE_KEY + '-' + settings.client_id])
+		expect($window.sessionStorage[AUTH_SESSION_STORAGE_KEY + '-' + settings.client_id + '-token'])
 		.toBeUndefined();
 		token = saveToken(token, $window);
-		expect(angular.fromJson($window.sessionStorage[AUTH_SESSION_STORAGE_KEY + '-' + settings.client_id]))
+		expect(angular.fromJson($window.sessionStorage[AUTH_SESSION_STORAGE_KEY + '-' + settings.client_id + '-token']))
 		.toEqual(token);
 	});
 
 	it('should not overwrite an existing entry in sessionStorage', function () {
 		token = saveToken(token, $window);
-		expect(angular.fromJson($window.sessionStorage[AUTH_SESSION_STORAGE_KEY + '-' + settings.client_id]))
+		expect(angular.fromJson($window.sessionStorage[AUTH_SESSION_STORAGE_KEY + '-' + settings.client_id + '-token']))
 		.toEqual(token);
 		var token2 = angular.copy(token);
 		token2.expires_in = 2000;
 		token2 = saveToken(token2, $window);
-		var fromStorage = angular.fromJson($window.sessionStorage[AUTH_SESSION_STORAGE_KEY + '-' + settings.client_id]);
+		var fromStorage = angular.fromJson($window.sessionStorage[AUTH_SESSION_STORAGE_KEY + '-' + settings.client_id + '-token']);
 		expect(fromStorage).toEqual(token2);
 		expect(fromStorage.expires_at).toEqual(token.expires_at);
 	});
