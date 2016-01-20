@@ -20,7 +20,7 @@ AUTH_SESSION_STORAGE_KEY = 'ng-auth';
 
 // save a code
 function saveCode(code, $window) {
-	$window.localStorage[AUTH_SESSION_STORAGE_KEY + '-' + settings.client_id] = angular.toJson(code);
+	$window.localStorage[AUTH_SESSION_STORAGE_KEY + '-' + settings.client_id + '-code'] = angular.toJson(code);
 	return code;
 }
 
@@ -34,7 +34,7 @@ function saveToken(token, $window) {
 	}
 
 	token.expires_at = token.expires_at || (now + (token.expires_in * 1000) - tokenRefreshReduction);
-	$window.sessionStorage[AUTH_SESSION_STORAGE_KEY + '-' + settings.client_id] = angular.toJson(token);
+	$window.sessionStorage[AUTH_SESSION_STORAGE_KEY + '-' + settings.client_id + '-token'] = angular.toJson(token);
 	return token;
 }
 
@@ -51,12 +51,17 @@ function buildTokenUrl(config, code, $location) {
 }
 
 // Using the config, build the auth redirect url
-function buildUrl(config, $location) {
+function buildUrl(config, $location, $window) {
 
 	var configCopy = angular.copy(config);
 	var url = configCopy.oauth2_url + '?';
 	var state = $location.url();
 	var redirect = $location.absUrl().split('#')[0].split('?')[0];
+
+	if ($location.$$html5) {
+		$window.localStorage.authPath = $location.$$path;
+		redirect = $location.protocol() + '://' + $location.host() + ':' + $location.port() + '/';
+	}
 
 	// Add clientId
 	url += 'client_id=' + configCopy.client_id;
@@ -76,7 +81,7 @@ function buildUrl(config, $location) {
 			url;
 
 	// Add response type (force token for now)
-	url += '&response_type=' + configCopy.response_type;
+	url += '&response_type=' + (configCopy.response_type || settings.response_type);
 
 	// Add redirectUri
 	url = configCopy.redirect_uri === true ?
@@ -233,6 +238,11 @@ function oauth2Service($injector, $q, $location, $window) {
 				saveToken(accessToken, $window);
 				showBody();
 				$location.search('');
+				var path = $window.localStorage.authPath;
+				if (path) {
+					$location.path(path);
+					delete $window.localStorage.authPath;
+				}
 			});
 
 			return;
@@ -267,7 +277,7 @@ function oauth2Service($injector, $q, $location, $window) {
 
 	service.authenticate = function () {
 		// Start Oauth2 flow
-		var url = buildUrl(settings, $location);
+		var url = buildUrl(settings, $location, $window);
 
 		// TODO: Popup style
 		$window.location.href = url;
@@ -279,7 +289,7 @@ function oauth2Service($injector, $q, $location, $window) {
 
 	service.isAuthenticated = function () {
 		// Verify user is authenticated
-		var token = angular.fromJson($window.sessionStorage[AUTH_SESSION_STORAGE_KEY + '-' + settings.client_id]);
+		var token = service.getToken();
 		var now = new Date().getTime();
 		var valid = (angular.isDefined(token) && parseInt(token.expires_at) > now);
 
@@ -292,7 +302,13 @@ function oauth2Service($injector, $q, $location, $window) {
 
 	service.wasAuthenticated = function () {
 		// Were you ever logged in?
-		return angular.isDefined(angular.fromJson($window.sessionStorage[AUTH_SESSION_STORAGE_KEY + '-' + settings.client_id]));
+		var token = service.getToken();
+
+		if (!token) {
+			return false;
+		}
+
+		return true;
 	};
 
 	service.getTokenFromCode = function (code) {
@@ -307,7 +323,7 @@ function oauth2Service($injector, $q, $location, $window) {
 		}).then(function (response) {
 			return response.json();
 		}).then(function (json) {
-			if (angular.isObject(json)) {
+			if (angular.isObject(json) && !json.error) {
 				defer.resolve(saveToken(json, $window));
 				return;
 			}
@@ -326,7 +342,7 @@ function oauth2Service($injector, $q, $location, $window) {
 
 		// Try async authentication
 		$injector.get('$http')({
-			url: buildUrl(settings, $location),
+			url: buildUrl(settings, $location, $window),
 			method: 'GET',
 			withCredentials: true,
 			headers: {
@@ -356,7 +372,11 @@ function oauth2Service($injector, $q, $location, $window) {
 	};
 
 	service.getToken = function () {
-		return angular.fromJson($window.sessionStorage[AUTH_SESSION_STORAGE_KEY + '-' + settings.client_id]);
+		return angular.fromJson($window.sessionStorage[AUTH_SESSION_STORAGE_KEY + '-' + settings.client_id + '-token']);
+	};
+
+	service.getCode = function () {
+		return angular.fromJson($window.localStorage[AUTH_SESSION_STORAGE_KEY + '-' + settings.client_id + '-code']);
 	};
 
 	// Kick off auth by calling function and configure auto token refresh
@@ -410,7 +430,7 @@ function oauth2($provide, $httpProvider) {
 					} else if (!$oauth2.isAuthenticated() &&
 					$oauth2.wasAuthenticated() && !settings.redirecting) {
 						return (settings.response_type && settings.response_type === 'code' ?
-							$oauth2.getTokenFromCode($oauth2.getToken().refresh_token) : $oauth2.updateToken()).then(function gotToken(token) {
+							$oauth2.getTokenFromCode($oauth2.getCode()) : $oauth2.updateToken()).then(function gotToken(token) {
 							config.headers.Authorization = 'Bearer ' + token.access_token;
 							saveToken(token, $window);
 							return $q.when(config);
