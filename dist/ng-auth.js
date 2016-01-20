@@ -60,7 +60,11 @@ function buildUrl(config, $location, $window) {
 
 	if ($location.$$html5) {
 		$window.localStorage.authPath = $location.$$path;
-		redirect = $location.protocol() + '://' + $location.host() + ':' + $location.port() + '/';
+		redirect = $location.protocol() + '://' + $location.host();
+		if (redirect.indexOf('localhost') !== -1) {
+			redirect += ':' + $location.port();
+		}
+		redirect += '/';
 	}
 
 	// Add clientId
